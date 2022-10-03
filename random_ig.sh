@@ -129,6 +129,18 @@ echo "The photo to upload caption friendly name is:
 $instagram_photo_to_upload_caption_friendly_name"
 echo "\n"
 
+# ask the user if they want to upload the photo
+echo "Do you want to upload the photo? (y/n)"
+read upload_photo
+
+# if the user wants to upload the photo then record the photo as uploaded and continue getting the caption otherwise exit
+if [ $upload_photo = "y" ]
+then
+    echo $instagram_photo_to_upload_file_name >> $cwd/instagram_uploaded.txt
+else
+    exit
+fi
+
 echo "Using openai api to get a captions for the photo..."
 echo "\n"
 
@@ -167,5 +179,3 @@ do
     echo "Caption $i:"
     write_caption
 done
-# write the filename to the instagram_uploaded_photos file
-echo "$instagram_photo_to_upload_file_name" >> $cwd/instagram_uploaded.txt
