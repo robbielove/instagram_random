@@ -16,6 +16,11 @@ touch $cwd/instagram_account.txt
 touch $cwd/instagram_uploaded.txt
 touch $cwd/instagram_captions.csv
 
+# check that the csv file has a header (date, file name, caption)
+if [ ! -s $cwd/instagram_captions.csv ]; then
+    echo "date,filename,caption" >> $cwd/instagram_captions.csv
+fi
+
 # if the instagram username file is empty then ask for the instagram username and password
 # check if the instagram username and password files are correct by showing the credentials and asking if they are correct
 # if they are not correct then ask for the instagram username and password again
@@ -220,6 +225,10 @@ write_caption() {
     echo "\n
 $caption"
     echo "\n"
+
+# write each caption to the instagram captions csv file with the date and time and file path. strip out any commas or new lines from the caption
+caption_1=$(echo $caption | cut -d ',' -f 1)
+echo "$(date), $instagram_photo_to_upload_file_path, $caption_1" >> $cwd/instagram_captions.csv
 }
 
 # output 5 captions
@@ -228,7 +237,4 @@ do
     echo "Caption $i:"
     write_caption
 done
-
-# write the caption to the instagram captions csv file with the date and time and file path. add quotes around the caption text incase it contains a comma
-echo "$(date), $instagram_photo_to_upload_file_path, '$caption'" >> $cwd/instagram_captions.csv
 # upload the photo to instagram with the caption
