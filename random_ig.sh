@@ -148,7 +148,7 @@ echo "The caption friendly name of the photo to upload is $instagram_photo_to_up
 # omit the stop parameter so that the api will generate the full caption
 echo "Using openai api to get a caption for the photo"
 # caption=$(curl -s -H "Authorization: Bearer $openai_api_key" -H "Content-Type: application/json" -d '{"prompt": "write a caption for an instagram post named: '"$instagram_photo_to_upload_caption_friendly_name"', write a list of popular instagram hashtags # that are relevant to the post:", "max_tokens": 80, "best_of": 10, "temperature": 1}' https://api.openai.com/v1/engines/davinci/completions )
-caption=$(curl -s -H "Authorization: Bearer $openai_api_key" -H "Content-Type: application/json" -d '{"prompt": "write instagram post named: '"$instagram_photo_to_upload_caption_friendly_name"', write a list instagram hashtags:", "max_tokens": 80, "best_of": 1, "temperature": 1}' https://api.openai.com/v1/engines/davinci/completions )
+caption=$(curl -s -H "Authorization: Bearer $openai_api_key" -H "Content-Type: application/json" -d '{"prompt": "write a list of instagram hashtags for a post about: '"$instagram_photo_to_upload_caption_friendly_name"'", "max_tokens": 80, "best_of": 1, "temperature": 1}' https://api.openai.com/v1/engines/davinci/completions )
 # echo "The caption is $caption"
 
 # get the caption from the json response
@@ -156,7 +156,8 @@ caption=$(curl -s -H "Authorization: Bearer $openai_api_key" -H "Content-Type: a
 # filter out the control characters from the json response
 # Make sure the print utility you are using does not interpret newlines: printf "%s
 caption=$(printf "%s" "$caption" | jq -r '.choices[0].text')
-echo "The caption is $caption"
+echo "The caption is:
+$caption"
 # write the caption to the instagram captions csv file with the date and time and file path. add quotes around the caption text incase it contains a comma
 echo "$(date), $instagram_photo_to_upload_file_path, '$caption'" >> $cwd/instagram_captions.csv
 # upload the photo to instagram with the caption
