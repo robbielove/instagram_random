@@ -49,20 +49,31 @@ do
     fi
 done
 
-# make sure the folder of photos to upload from exists
+# change the above to allow for multiple folders of photos to upload from and then randomly select one of them - save the folder names to the instagram_folder.txt file
+
+while [ ! -s $cwd/instagram_folder.txt ]
+do
+    echo "Please enter the folders of photos to upload from: (separate each folder with a return)"
+    # ask for the folders of photos to upload from until the user enters a blank line
+    while [ ! -z $instagram_folder ]
+    do
+        read instagram_folder
+        if [ ! -z $instagram_folder ]
+        then
+            echo $instagram_folder >> $cwd/instagram_folder.txt
+        fi
+    done
+done
+
+# choose a random folder from the instagram_folder.txt file - macos must use $RANDOM, and make sure it exists - if it doesn't then choose another one and make sure it exists
+# each folder exists on a new line in the instagram_folder.txt file
+instagram_folder=$(sed -n $((RANDOM % $(wc -l < $cwd/instagram_folder.txt) + 1))p $cwd/instagram_folder.txt)
 while [ ! -d $instagram_folder ]
 do
-    echo "The folder of photos to upload from does not exist"
-    echo "Please enter the folder of photos to upload from:"
-    read instagram_folder
-    echo "The folder of photos to upload from is $instagram_folder"
-    echo "Is this correct? (y/n)"
-    read instagram_folder_correct
-    if [ $instagram_folder_correct = "y" ]
-    then
-        echo $instagram_folder > $cwd/instagram_folder.txt
-    fi
+    instagram_folder=$(sed -n $((RANDOM % $(wc -l < $cwd/instagram_folder.txt) + 1))p $cwd/instagram_folder.txt)
 done
+echo "The folder of photos to upload from is $instagram_folder"
+echo "\n"
 
 # if the instagram account file is empty then ask for the instagram account to upload to
 while [ ! -s $cwd/instagram_account.txt ]
@@ -134,30 +145,90 @@ instagram_photo_to_upload_file_name=$(echo $instagram_photo_to_upload | cut -d '
 
 # get the photo to upload file path - $instagram_folder/$instagram_photo_to_upload_file_name
 instagram_photo_to_upload_file_path=$instagram_folder/$instagram_photo_to_upload_file_name
-echo "The photo to upload file path is $instagram_photo_to_upload_file_path"
+echo "The photo to upload file path is:
+$instagram_photo_to_upload_file_path"
+echo "\n"
 
-# get the caption friendly name of the photo to upload - remove the file extension and replace underscores with spaces and remove the leading number
-instagram_photo_to_upload_caption_friendly_name=$(echo $instagram_photo_to_upload_file_name | cut -d '.' -f 1 | sed 's/_/ /g' | sed 's/^[0-9]*//')
-echo "The caption friendly name of the photo to upload is $instagram_photo_to_upload_caption_friendly_name"
+# get the caption friendly name of the photo to upload - 
 
-# use openai api to get a caption for the photo
-# use the photo to upload file name as the prompt
-# the prompt should be something like "create an instagram caption for the photo with the file name <instagram_photo_to_upload_file_name> and the caption should contain popular hashtags that are relevant to the photo, include a maximum of 20 hashtags"
-# max_tokens=100
-# temperature=1
-# omit the stop parameter so that the api will generate the full caption
-echo "Using openai api to get a caption for the photo"
-# caption=$(curl -s -H "Authorization: Bearer $openai_api_key" -H "Content-Type: application/json" -d '{"prompt": "write a caption for an instagram post named: '"$instagram_photo_to_upload_caption_friendly_name"', write a list of popular instagram hashtags # that are relevant to the post:", "max_tokens": 80, "best_of": 10, "temperature": 1}' https://api.openai.com/v1/engines/davinci/completions )
-caption=$(curl -s -H "Authorization: Bearer $openai_api_key" -H "Content-Type: application/json" -d '{"prompt": "write a list of instagram hashtags for a post about: '"$instagram_photo_to_upload_caption_friendly_name"'", "max_tokens": 80, "best_of": 1, "temperature": 1}' https://api.openai.com/v1/engines/davinci/completions )
-# echo "The caption is $caption"
+# repeat the above but echo the result after each step
+instagram_photo_to_upload_caption_friendly_name=$(echo $instagram_photo_to_upload_file_name)
 
-# get the caption from the json response
-# parse error: Invalid string: control characters from U+0000 through U+001F must be escaped at line 9, column 6
-# filter out the control characters from the json response
-# Make sure the print utility you are using does not interpret newlines: printf "%s
-caption=$(printf "%s" "$caption" | jq -r '.choices[0].text')
-echo "The caption is:
+# remove the wording "DALL·E",
+instagram_photo_to_upload_caption_friendly_name=$(echo $instagram_photo_to_upload_caption_friendly_name | sed 's/DALL·E //')
+# echo "The photo to upload caption friendly name is:
+# $instagram_photo_to_upload_caption_friendly_name"
+# echo "\n"
+
+# remove the date eg. "2021-01-01"
+instagram_photo_to_upload_caption_friendly_name=$(echo $instagram_photo_to_upload_caption_friendly_name | sed 's/[0-9]\{4\}-[0-9]\{2\}-[0-9]\{2\} //')
+# echo "The photo to upload caption friendly name is:
+# $instagram_photo_to_upload_caption_friendly_name"
+# echo "\n"
+
+# remove the timestamp in the format "02.23.07 - " or "12.01.34 - " sed
+instagram_photo_to_upload_caption_friendly_name=$(echo $instagram_photo_to_upload_caption_friendly_name | sed 's/[0-9][0-9].[0-9][0-9].[0-9][0-9].[-].//')
+# echo "The photo to upload caption friendly name is:
+# $instagram_photo_to_upload_caption_friendly_name"
+# echo "\n"
+
+# remove the ending file extension eg. ".jpg" (upto four characters)
+instagram_photo_to_upload_caption_friendly_name=$(echo $instagram_photo_to_upload_caption_friendly_name | sed 's/\.[^.]*$//')
+# echo "The photo to upload caption friendly name is:
+# $instagram_photo_to_upload_caption_friendly_name"
+# echo "\n"
+
+# replace any double spaces with a comma and space
+instagram_photo_to_upload_caption_friendly_name=$(echo $instagram_photo_to_upload_caption_friendly_name | sed 's/__/, /g')
+# echo "The photo to upload caption friendly name is:
+# $instagram_photo_to_upload_caption_friendly_name"
+# echo "\n"
+
+# remove the leading number if there is one
+instagram_photo_to_upload_caption_friendly_name=$(echo $instagram_photo_to_upload_caption_friendly_name | sed 's/^[0-9]*_//')
+# echo "The photo to upload caption friendly name is:
+# $instagram_photo_to_upload_caption_friendly_name"
+# echo "\n"
+
+# replace underscores with spaces
+instagram_photo_to_upload_caption_friendly_name=$(echo $instagram_photo_to_upload_caption_friendly_name | sed 's/_/ /g')
+echo "The photo to upload caption friendly name is:
+$instagram_photo_to_upload_caption_friendly_name"
+echo "\n"
+
+echo "Using openai api to get a captions for the photo..."
+echo "\n"
+
+# write a caption function using the above caption code
+write_caption() {
+    # use openai api to get a caption for the photo
+    # use the photo to upload file name as the prompt
+    # the prompt should be something like "create an instagram caption for the photo with the file name <instagram_photo_to_upload_file_name> and the caption should contain popular hashtags that are relevant to the photo, include a maximum of 20 hashtags"
+    # max_tokens=100
+    # temperature=1
+    # omit the stop parameter so that the api will generate the full caption
+
+    # caption=$(curl -s -H "Authorization: Bearer $openai_api_key" -H "Content-Type: application/json" -d '{"prompt": "write a caption for an instagram post named: '"$instagram_photo_to_upload_caption_friendly_name"', write a list of popular instagram hashtags # that are relevant to the post:", "max_tokens": 80, "best_of": 10, "temperature": 1}' https://api.openai.com/v1/engines/davinci/completions )
+    caption=$(curl -s -H "Authorization: Bearer $openai_api_key" -H "Content-Type: application/json" -d '{"prompt": "write a list of instagram hashtags for a post titled: '"$instagram_photo_to_upload_caption_friendly_name"': #art", "max_tokens": 80, "best_of": 1, "temperature": 1}' https://api.openai.com/v1/engines/davinci/completions )
+    # echo "The caption is $caption"
+
+    # get the caption from the json response
+    # parse error: Invalid string: control characters from U+0000 through U+001F must be escaped at line 9, column 6
+    # filter out the control characters from the json response
+    # Make sure the print utility you are using does not interpret newlines: printf "%s
+    caption=$(printf "%s" "$caption" | jq -r '.choices[0].text')
+    echo "\n
 $caption"
+    echo "\n"
+}
+
+# output 5 captions
+for i in {1..5}
+do
+    echo "Caption $i:"
+    write_caption
+done
+
 # write the caption to the instagram captions csv file with the date and time and file path. add quotes around the caption text incase it contains a comma
 echo "$(date), $instagram_photo_to_upload_file_path, '$caption'" >> $cwd/instagram_captions.csv
 # upload the photo to instagram with the caption
