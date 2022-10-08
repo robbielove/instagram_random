@@ -33,6 +33,19 @@ do
     done
 done
 
+# if the openai api key file is empty then ask for the openai api key
+while [ ! -s $cwd/openai_api_key.txt ]
+do
+    echo "Please enter your openai api key:"
+    read openai_api_key
+    echo "Your openai api key is $openai_api_key"
+    echo "Is this correct? (y/n)"
+    read openai_api_key_correct
+    if [ $openai_api_key_correct = "y" ]
+    then
+        echo $openai_api_key > $cwd/openai_api_key.txt
+    fi
+done
 
 # create a function that gets all the files in the folders of photos to upload from and then randomly selects one of the files - checking the file instagram_uploaded.txt first and if found; repeating unitl a file is chosen, it then adds the full path to the file to the $instagram_photo_to_upload_file_name variable
 function get_random_photo_to_upload {
@@ -59,87 +72,87 @@ function get_random_photo_to_upload {
     fi
 }
 
-# run the function to get the file name of the photo to upload
-get_random_photo_to_upload
+function open_file {
+    # get the caption friendly name of the photo to upload
+    instagram_photo_to_upload_caption_friendly_name=$(echo $instagram_photo_to_upload_file_name)
 
-# if the openai api key file is empty then ask for the openai api key
-while [ ! -s $cwd/openai_api_key.txt ]
+    # remove the wording "DALL·E",
+    instagram_photo_to_upload_caption_friendly_name=$(echo $instagram_photo_to_upload_caption_friendly_name | sed 's/DALL·E //')
+    # echo "The photo to upload caption friendly name is:
+    # $instagram_photo_to_upload_caption_friendly_name"
+    # echo "\n"
+
+    # remove the date eg. "2021-01-01"
+    instagram_photo_to_upload_caption_friendly_name=$(echo $instagram_photo_to_upload_caption_friendly_name | sed 's/[0-9]\{4\}-[0-9]\{2\}-[0-9]\{2\} //')
+    # echo "The photo to upload caption friendly name is:
+    # $instagram_photo_to_upload_caption_friendly_name"
+    # echo "\n"
+
+    # remove the timestamp in the format "02.23.07 - " or "12.01.34 - " sed
+    instagram_photo_to_upload_caption_friendly_name=$(echo $instagram_photo_to_upload_caption_friendly_name | sed 's/[0-9][0-9].[0-9][0-9].[0-9][0-9].[-].//')
+    # echo "The photo to upload caption friendly name is:
+    # $instagram_photo_to_upload_caption_friendly_name"
+    # echo "\n"
+
+    # remove the ending file extension eg. ".jpg" (upto four characters)
+    instagram_photo_to_upload_caption_friendly_name=$(echo $instagram_photo_to_upload_caption_friendly_name | sed 's/\.[^.]*$//')
+    # echo "The photo to upload caption friendly name is:
+    # $instagram_photo_to_upload_caption_friendly_name"
+    # echo "\n"
+
+    # replace any double spaces with a comma and space
+    instagram_photo_to_upload_caption_friendly_name=$(echo $instagram_photo_to_upload_caption_friendly_name | sed 's/__/, /g')
+    # echo "The photo to upload caption friendly name is:
+    # $instagram_photo_to_upload_caption_friendly_name"
+    # echo "\n"
+
+    # remove the leading number if there is one
+    instagram_photo_to_upload_caption_friendly_name=$(echo $instagram_photo_to_upload_caption_friendly_name | sed 's/^[0-9]*_//')
+    # echo "The photo to upload caption friendly name is:
+    # $instagram_photo_to_upload_caption_friendly_name"
+    # echo "\n"
+
+    # echo the file path is:
+    echo "The file path is:
+    $instagram_photo_to_upload_file_path"
+    echo "\n"
+
+    # open the file selected in finder
+    open --reveal "$instagram_photo_to_upload_file_path"
+
+    # replace underscores with spaces
+    instagram_photo_to_upload_caption_friendly_name=$(echo $instagram_photo_to_upload_caption_friendly_name | sed 's/_/ /g')
+    echo "The photo to upload caption friendly name is:
+    $instagram_photo_to_upload_caption_friendly_name"
+    echo "\n"
+}
+
+function select_file {
+
+    # run the function to get the file name of the photo to upload
+    get_random_photo_to_upload
+
+    # open the file selected in finder
+    open_file
+
+    # ask the user if they want to upload the photo
+    echo "Do you want to upload the photo? (y/n)"
+    read upload_photo
+}
+
+# run the function to select the file
+select_file
+
+# while the user wants to upload the photo then record the photo as uploaded and continue getting the caption otherwise start again (dont continue getting the caption)
+while [ "$upload_photo" != "y" ]
 do
-    echo "Please enter your openai api key:"
-    read openai_api_key
-    echo "Your openai api key is $openai_api_key"
-    echo "Is this correct? (y/n)"
-    read openai_api_key_correct
-    if [ $openai_api_key_correct = "y" ]
-    then
-        echo $openai_api_key > $cwd/openai_api_key.txt
+    select_file
+
+    if [ $upload_photo = "y" ]; then
+        echo $instagram_photo_to_upload_file_name >> $cwd/instagram_uploaded.txt
+        break
     fi
 done
-
-# get the caption friendly name of the photo to upload
-instagram_photo_to_upload_caption_friendly_name=$(echo $instagram_photo_to_upload_file_name)
-
-# remove the wording "DALL·E",
-instagram_photo_to_upload_caption_friendly_name=$(echo $instagram_photo_to_upload_caption_friendly_name | sed 's/DALL·E //')
-# echo "The photo to upload caption friendly name is:
-# $instagram_photo_to_upload_caption_friendly_name"
-# echo "\n"
-
-# remove the date eg. "2021-01-01"
-instagram_photo_to_upload_caption_friendly_name=$(echo $instagram_photo_to_upload_caption_friendly_name | sed 's/[0-9]\{4\}-[0-9]\{2\}-[0-9]\{2\} //')
-# echo "The photo to upload caption friendly name is:
-# $instagram_photo_to_upload_caption_friendly_name"
-# echo "\n"
-
-# remove the timestamp in the format "02.23.07 - " or "12.01.34 - " sed
-instagram_photo_to_upload_caption_friendly_name=$(echo $instagram_photo_to_upload_caption_friendly_name | sed 's/[0-9][0-9].[0-9][0-9].[0-9][0-9].[-].//')
-# echo "The photo to upload caption friendly name is:
-# $instagram_photo_to_upload_caption_friendly_name"
-# echo "\n"
-
-# remove the ending file extension eg. ".jpg" (upto four characters)
-instagram_photo_to_upload_caption_friendly_name=$(echo $instagram_photo_to_upload_caption_friendly_name | sed 's/\.[^.]*$//')
-# echo "The photo to upload caption friendly name is:
-# $instagram_photo_to_upload_caption_friendly_name"
-# echo "\n"
-
-# replace any double spaces with a comma and space
-instagram_photo_to_upload_caption_friendly_name=$(echo $instagram_photo_to_upload_caption_friendly_name | sed 's/__/, /g')
-# echo "The photo to upload caption friendly name is:
-# $instagram_photo_to_upload_caption_friendly_name"
-# echo "\n"
-
-# remove the leading number if there is one
-instagram_photo_to_upload_caption_friendly_name=$(echo $instagram_photo_to_upload_caption_friendly_name | sed 's/^[0-9]*_//')
-# echo "The photo to upload caption friendly name is:
-# $instagram_photo_to_upload_caption_friendly_name"
-# echo "\n"
-
-# echo the file path is:
-echo "The file path is:
-$instagram_photo_to_upload_file_path"
-echo "\n"
-
-# open the file selected in finder
-open --reveal $instagram_photo_to_upload_file_path
-
-# replace underscores with spaces
-instagram_photo_to_upload_caption_friendly_name=$(echo $instagram_photo_to_upload_caption_friendly_name | sed 's/_/ /g')
-echo "The photo to upload caption friendly name is:
-$instagram_photo_to_upload_caption_friendly_name"
-echo "\n"
-
-# ask the user if they want to upload the photo
-echo "Do you want to upload the photo? (y/n)"
-read upload_photo
-
-# if the user wants to upload the photo then record the photo as uploaded and continue getting the caption otherwise exit
-if [ $upload_photo = "y" ]
-then
-    echo $instagram_photo_to_upload_file_name >> $cwd/instagram_uploaded.txt
-else
-    exit
-fi
 
 echo "Using openai api to get a captions for the photo..."
 echo "\n"
@@ -173,9 +186,31 @@ $caption"
     echo "$(date), $instagram_photo_to_upload_file_path, $caption" >> $cwd/instagram_captions.csv
 }
 
-# output 5 captions
+# output 5 captions, check if the user wants to use any of them, if not then ask how many more captions they want to output
 for i in {1..5}
 do
-    echo "Caption $i:"
     write_caption
+    echo "Do you want to use this caption? (y/n)"
+    read use_caption
+    if [ $use_caption = "y" ]
+    then
+        break
+    fi
+done
+
+# if the user does not want to use any of the captions then ask how many more captions they want to output, repeat until the user wants to use one of the captions
+while [ $use_caption != "y" ]
+do
+    echo "How many more captions do you want to output? (1-5)"
+    read number_of_captions_to_output
+    for i in $(seq 1 $number_of_captions_to_output)
+    do
+        write_caption
+        echo "Do you want to use this caption? (y/n)"
+        read use_caption
+        if [ $use_caption = "y" ]
+        then
+            break
+        fi
+    done
 done
