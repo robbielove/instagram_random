@@ -169,7 +169,7 @@ write_caption() {
     # omit the stop parameter so that the api will generate the full caption
 
     # caption=$(curl -s -H "Authorization: Bearer $openai_api_key" -H "Content-Type: application/json" -d '{"prompt": "write a caption for an instagram post named: '"$instagram_photo_to_upload_caption_friendly_name"', write a list of popular instagram hashtags # that are relevant to the post:", "max_tokens": 80, "best_of": 10, "temperature": 1}' https://api.openai.com/v1/engines/davinci/completions )
-    caption=$(curl -s -H "Authorization: Bearer $openai_api_key" -H "Content-Type: application/json" -d '{"prompt": "write a list of instagram hashtags for a post titled: '"$instagram_photo_to_upload_caption_friendly_name"': #", "max_tokens": 80, "best_of": 1, "temperature": 1}' https://api.openai.com/v1/engines/davinci/completions )
+    caption=$(curl -s -H "Authorization: Bearer $openai_api_key" -H "Content-Type: application/json" -d '{"prompt": "write a list of instagram hashtags (including emoji) for a post titled: '"$instagram_photo_to_upload_caption_friendly_name"': #", "max_tokens": 90, "best_of": 1, "temperature": 0.7}' https://api.openai.com/v1/engines/davinci/completions )
     # echo "The caption is $caption"
 
     # get the caption from the json response
@@ -186,7 +186,7 @@ $caption"
     echo "$(date), $instagram_photo_to_upload_file_path, $caption" >> $cwd/instagram_captions.csv
 }
 
-# output 5 captions, check if the user wants to use any of them, if not then ask how many more captions they want to output
+# output 10 captions, check if the user wants to use any of them, if not then ask how many more captions they want to output
 for i in {1..5}
 do
     write_caption
