@@ -114,17 +114,26 @@ function open_file {
 
     # echo the file path is:
     echo "The file path is:
-    $instagram_photo_to_upload_file_path"
-    echo "\n"
+
+$instagram_photo_to_upload_file_path
+"
 
     # open the file selected in finder
     open --reveal "$instagram_photo_to_upload_file_path"
 
     # replace underscores with spaces
     instagram_photo_to_upload_caption_friendly_name=$(echo $instagram_photo_to_upload_caption_friendly_name | sed 's/_/ /g')
+
+    # remove the word 'null' from the caption
+    instagram_photo_to_upload_caption_friendly_name=$(echo $instagram_photo_to_upload_caption_friendly_name | sed 's/null//g')
+
+    #replace dashes with spaces
+    instagram_photo_to_upload_caption_friendly_name=$(echo $instagram_photo_to_upload_caption_friendly_name | sed 's/-/ /g')
+
     echo "The photo to upload caption friendly name is:
-    $instagram_photo_to_upload_caption_friendly_name"
-    echo "\n"
+    
+$instagram_photo_to_upload_caption_friendly_name
+"
 }
 
 function select_file {
@@ -154,8 +163,7 @@ do
     fi
 done
 
-echo "Using openai api to get a captions for the photo..."
-echo "\n"
+echo "Using openai api to get a captions for the photo [$instagram_photo_to_upload_caption_friendly_name]"
 
 # write a caption function using the above caption code
 write_caption() {
@@ -179,7 +187,7 @@ write_caption() {
     caption=$(printf "%s" "$caption" | jq -r '.choices[0].text')
     caption=$(echo $caption | cut -d ',' -f 1)
     echo "\n
-$caption"
+#$caption"
     echo "\n"
 
     # write each caption to the instagram captions csv file with the date and time and file path. strip out any commas or new lines from the caption
@@ -187,7 +195,7 @@ $caption"
 }
 
 # output 10 captions, check if the user wants to use any of them, if not then ask how many more captions they want to output
-for i in {1..5}
+for i in {1..10}
 do
     write_caption
     echo "Do you want to use this caption? (y/n)"
