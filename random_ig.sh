@@ -37,8 +37,9 @@ prompt_for_hashtags() {
   local photo_name response caption curl_command
 
   photo_name=$(basename "$1")
-  curl_command="curl -s -H 'Authorization: Bearer $openai_api_key' -H 'Content-Type: application/json' -d '{\"model\": \"gpt-3.5-turbo\", \"max_tokens\": 120, \"temperature\": 1, 
-   \"messages\": [{\"role\": \"system\", \"content\": \"You are an Instagram hashtag generator. Provide detailed and bulk relevant hashtags based on the given filename, make the hashtags for instagram.\"}, {\"role\": \"user\", \"content\": \"Photo title: $photo_name.\"}]}' https://api.openai.com/v1/chat/completions"
+  curl_command="curl -s -H 'Authorization: Bearer $openai_api_key' -H 'Content-Type: application/json' -d '{\"model\": \"gpt-3.5-turbo\", \"max_tokens\": 240, \"temperature\": 1, 
+   \"messages\": [{\"role\": \"system\", \"content\": \"You are an Instagram post caption and hashtag generator. Provide detailed and bulk relevant generic non-niche hashtags based on the given filename - use only popular but relevant single words, make the hashtags for instagram and write and caption for the file and the generated hashtags at the end\"
+   }, {\"role\": \"user\", \"content\": \"Photo title: $photo_name.\"}]}' https://api.openai.com/v1/chat/completions"
 
   echo "Prompting OpenAI API for hashtags..." >&2
   echo "Executing: $curl_command" >&2
